@@ -1,0 +1,53 @@
+name: Build Christian Geet APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.0'
+          channel: stable
+
+      - name: Check source
+        run: |
+          test -f lib/main.dart
+          test -f pubspec.yaml
+          grep -q "Christian Geet & Zaboor" lib/main.dart
+          echo "Christian Geet source found."
+
+      - name: Create Android project
+        run: flutter create . --platforms=android
+
+      - name: Restore Christian Geet source
+        run: |
+          git checkout -- lib/main.dart
+          git checkout -- pubspec.yaml
+
+      - name: Verify source after Flutter create
+        run: |
+          grep -q "Christian Geet & Zaboor" lib/main.dart
+          echo "Christian Geet source is still active."
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: christian-geet-zaboor-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
